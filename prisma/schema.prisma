@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Project {
+  id                   String         @id @default(cuid())
+  title                String
+  slug                 String         @unique
+  coverImageUrl        String?
+  coverImagePublicId   String?
+  shortDescription     String
+  overview             String
+  outcome              String?
+  keyFeatures          String[]
+  technologyUsed       String[]
+  challengesAndLessons String?
+  githubUrl            String?
+  liveUrl              String?
+  published            Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  galleryImages        ProjectImage[]
+
+  @@index([published])
+  @@index([createdAt])
+}
+
+model ProjectImage {
+  id        String   @id @default(cuid())
+  projectId String
+  imageUrl  String
+  publicId  String
+  caption   String?
+  order     Int      @default(0)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([order])
+}
+
+model Blog {
+  id              String                 @id @default(cuid())
+  title           String
+  slug            String                 @unique
+  coverImageUrl   String?
+  coverImageId    String?
+  excerpt         String?
+  content         String
+  seoTitle        String?
+  seoDescription  String?
+  featured        Boolean                @default(false)
+  published       Boolean                @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  categoryLinks   BlogCategoryRelation[]
+  tagLinks        BlogTagRelation[]
+
+  @@index([published])
+  @@index([featured])
+  @@index([createdAt])
+}
+
+model BlogCategory {
+  id        String                 @id @default(cuid())
+  name      String                 @unique
+  slug      String                 @unique
+  blogs     BlogCategoryRelation[]
+  createdAt DateTime               @default(now())
+}
+
+model BlogTag {
+  id        String            @id @default(cuid())
+  name      String            @unique
+  slug      String            @unique
+  blogs     BlogTagRelation[]
+  createdAt DateTime          @default(now())
+}
+
+model BlogCategoryRelation {
+  blogId     String
+  categoryId String
+  blog       Blog         @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([blogId, categoryId])
+  @@index([categoryId])
+}
+
+model BlogTagRelation {
+  blogId String
+  tagId  String
+  blog   Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  tag    BlogTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([blogId, tagId])
+  @@index([tagId])
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  position  String?
+  company   String?
+  feedback  String
+  avatarUrl String?
+  avatarId  String?
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published])
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  readAt    DateTime?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([archived])
+  @@index([createdAt])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  email     String
+  phone     String?
+  location  String?
+  githubUrl String?
+  linkedin  String?
+  xUrl      String?
+  website   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime?
+  reminderAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startAt])
+}
+
+model BehindTheScreens {
+  id           String   @id @default(cuid())
+  imageUrl     String
+  imagePublicId String
+  caption      String?
+  category     String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([displayOrder])
+}
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
