@@ -4,6 +4,7 @@ import { compare } from "bcryptjs";
 import { z } from "zod";
 
 import { env } from "@/env";
+import { prisma } from "@/lib/db";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -27,19 +28,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsed.data;
 
-        if (email !== env.AUTH_ADMIN_EMAIL) {
+        // Query user from database
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!user || !user.password) {
           return null;
         }
 
-        const isValid = await compare(password, env.AUTH_ADMIN_PASSWORD_HASH);
+        const isValid = await compare(password, user.password);
         if (!isValid) {
           return null;
         }
 
         return {
-          id: "admin",
-          name: "Administrator",
-          email: env.AUTH_ADMIN_EMAIL,
+          id: user.id,
+          name: user.name ?? "Administrator",
+          email: user.email,
           role: "admin",
         };
       },
